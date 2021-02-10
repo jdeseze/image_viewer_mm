@@ -103,10 +103,11 @@ def get_exp(filename):
     nb_pos=1
     nb_wl=1
     with open(filename,'r') as file:
-        for i in range(4):
-            file.readline()
+        i=0
         line=file.readline()
-        
+        while not line.rstrip().split(', ')[0]=='"NTimePoints"' and i<50:
+            line=file.readline()
+            i+=1
         #get number of timepoints
         nb_tp=int(line.rstrip().split(', ')[1])
         line=file.readline()
