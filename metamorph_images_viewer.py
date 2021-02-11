@@ -21,12 +21,11 @@ import exifread
 
 
 def main():
-    st.set_page_config(page_title="Segmentation", page_icon=":microscope:",layout="wide")
+    st.set_page_config(page_title="Image viewer", page_icon=":microscope:",layout="wide")
     
     state=State()
     
     with st.sidebar:
-        file=st.file_uploader('.nd file')
         state.file_dir=st.text_input('File directory',"E:/optorhoa/201210_RPE1_optoRhoa_RBDiRFP/")
         try:
             state.filename=file_selector(state.file_dir)
@@ -58,12 +57,13 @@ class WL:
         self.step=step
         
 class Exp:
-    def __init__(self,expname,wl=[],nbpos=1,nbtime=1):
+    def __init__(self,expname,wl=[],nbpos=1,nbtime=1,comments=[]):
         self.name=expname
         self.nbpos=nbpos
         self.nbtime=nbtime
         self.wl=wl
         self.nbwl=len(wl)
+        self.comments=comments
         if self.nbtime==1:
             self.timestep=0
         else:
@@ -105,7 +105,16 @@ def get_exp(filename):
     with open(filename,'r') as file:
         i=0
         line=file.readline()
+        comments=[]
+        iscomments=False
         while not line.rstrip().split(', ')[0]=='"NTimePoints"' and i<50:
+            if line.rstrip().split(', ')[0]=='"StartTime1"':
+                iscomments=False
+            if iscomments:
+                comments.append(line.rstrip())
+            if line.rstrip().split(', ')[0]=='"Description"':
+                iscomments=True
+                comments.append(str(line.rstrip().split(', ')[1]))
             line=file.readline()
             i+=1
         #get number of timepoints
@@ -141,15 +150,19 @@ def get_exp(filename):
         
         expname=filename.rstrip('.nd')
         
-        return Exp(expname,wl,nb_pos,nb_tp)              
+        return Exp(expname,wl,nb_pos,nb_tp,comments)              
 
 def look_images(state):
     with st.sidebar:
         exp=get_exp(state.filename)
         state.exp=exp
-        st.write("Number of positions : "+str(exp.nbpos))
-        st.write("Number of time steps : "+str(exp.nbtime))
-        st.write("Time step : "+str(exp.timestep)+' sec')
+        st.markdown('**'+'Comments :'+'**')
+        for comment in exp.comments:
+            if not comment=='':
+                st.markdown('_'+comment+'_') 
+        st.write('**'+"Number of positions : "+'**'+str(exp.nbpos))
+        st.write('**'+"Number of time steps : "+'**'+str(exp.nbtime))
+        st.write('**'+"Time step : "+'**'+str(exp.timestep)+' sec')
         state.pos=st.selectbox('Position',range(1,exp.nbpos+1))
             
     if (not state.temppos==state.pos) or (not state.exp.name==state.tempexpname):
